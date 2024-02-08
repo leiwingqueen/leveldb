@@ -79,9 +79,9 @@ Iterator* MemTable::NewIterator() { return new MemTableIterator(&table_); }
 // - the length of varint32 calculated by the function VarintLength
 // - use Arena::Allocate to allocate memory
 // - use EncodeVarint32 to write varint32 into buffer
-// - use memcpy to write data from key/value data to 
+// - use memcpy to write data from key/value data to
 
-void MemTable::Add(SequenceNumber s, ValueType type, const  & key,
+void MemTable::Add(SequenceNumber s, ValueType type, const Slice& key,
                    const Slice& value) {
   // Format of an entry is concatenation of:
   //  key_size     : varint32 of internal_key.size()
@@ -91,6 +91,7 @@ void MemTable::Add(SequenceNumber s, ValueType type, const  & key,
   //  value bytes  : char[value.size()]
 
   // TODO: MemTable implement
+
 }
 
 bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
