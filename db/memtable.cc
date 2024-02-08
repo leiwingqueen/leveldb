@@ -111,6 +111,10 @@ void MemTable::Add(SequenceNumber s, ValueType type, const Slice& key,
   table_.Insert(buffer);
 }
 
+
+// hint:
+// - use Table::Iterator scan skip list to find the item
+// -
 bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
   // entry format is:
   //    klength  varint32
