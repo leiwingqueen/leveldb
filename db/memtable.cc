@@ -3,10 +3,13 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include "db/memtable.h"
+
 #include "db/dbformat.h"
+
 #include "leveldb/comparator.h"
 #include "leveldb/env.h"
 #include "leveldb/iterator.h"
+
 #include "util/coding.h"
 
 namespace leveldb {
@@ -90,8 +93,22 @@ void MemTable::Add(SequenceNumber s, ValueType type, const Slice& key,
   //  value_size   : varint32 of value.size()
   //  value bytes  : char[value.size()]
 
-  // TODO: MemTable implement
+  // MemTable implement
+  // internal data = key_data|sequence(7 byte)|type(1 byte)
+  int internal_key_size = key.size() + 8;
 
+  int total_size = VarintLength(internal_key_size) + internal_key_size +
+                   VarintLength(value.size()) + value.size();
+  char* buffer = arena_.Allocate(total_size);
+  EncodeVarint32(buffer, internal_key_size);
+  memcpy(buffer, key.data(), key.size());
+  buffer += key.size();
+  uint64_t tag = (s << 8) | (type & 0xff);
+  EncodeFixed64(buffer, tag);
+  buffer += 8;
+  EncodeFixed32(buffer, value.size());
+  memcpy(buffer, value.data(), value.size());
+  table_.Insert(buffer);
 }
 
 bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
@@ -106,6 +123,7 @@ bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
   // all entries with overly large sequence numbers.
 
   // TODO: MemTable implement
+  return true;
 }
 
 }  // namespace leveldb
