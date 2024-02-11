@@ -21,6 +21,12 @@ static Slice GetLengthPrefixedSlice(const char* data) {
   return Slice(p, len);
 }
 
+static void printSlice(Slice s) {
+  for (int i = 0; i < s.size(); ++i) {
+    std::fprintf(stdout, "0x%d ", s.data()[i]);
+  }
+}
+
 MemTable::MemTable(const InternalKeyComparator& comparator)
     : comparator_(comparator), refs_(0), table_(comparator_, &arena_) {}
 
@@ -101,15 +107,21 @@ void MemTable::Add(SequenceNumber s, ValueType type, const Slice& key,
   int total_size = VarintLength(internal_key_size) + internal_key_size +
                    VarintLength(value.size()) + value.size();
   char* buffer = arena_.Allocate(total_size);
-  EncodeVarint32(buffer, internal_key_size);
-  memcpy(buffer, key.data(), key.size());
-  buffer += key.size();
+  // point to the head
+  char* p = buffer;
+  p = EncodeVarint32(p, internal_key_size);
+  memcpy(p, key.data(), key.size());
+  p += key.size();
   uint64_t tag = (s << 8) | (type & 0xff);
-  EncodeFixed64(buffer, tag);
-  buffer += 8;
-  EncodeFixed32(buffer, value.size());
-  memcpy(buffer, value.data(), value.size());
+  EncodeFixed64(p, tag);
+  p += 8;
+  p = EncodeVarint32(p, value.size());
+  memcpy(p, value.data(), value.size());
   table_.Insert(buffer);
+  // print result
+  std::fprintf(stdout, "memtable add[finish]...");
+  printSlice(key);
+  std::fprintf(stdout, "\n");
 }
 
 // hint:
@@ -141,7 +153,8 @@ bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
   const char* p = GetVarint32Ptr(item, item + 5, &key_size);
   Slice keySlice1(p, key_size - 8);
   Slice keySlice2(key.user_key());
-  if (comparator_.comparator.Compare(keySlice1, keySlice2) != 0) {
+  if (comparator_.comparator.user_comparator()->Compare(keySlice1, keySlice2) !=
+      0) {
     return false;
   }
   // get type
@@ -157,6 +170,9 @@ bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
     // deletion
     *s = Status::NotFound("not found");
   }
+  std::fprintf(stdout, "memtable get[finish]...");
+  printSlice(key.user_key());
+  std::fprintf(stdout, "\n");
   return true;
 }
 
