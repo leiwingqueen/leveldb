@@ -32,6 +32,7 @@ class Slice;
 
 class LEVELDB_EXPORT WriteBatch {
  public:
+  // Handler is the helper of WriteBatch
   class LEVELDB_EXPORT Handler {
    public:
     virtual ~Handler();

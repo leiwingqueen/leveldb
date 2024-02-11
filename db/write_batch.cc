@@ -18,7 +18,9 @@
 #include "db/dbformat.h"
 #include "db/memtable.h"
 #include "db/write_batch_internal.h"
+
 #include "leveldb/db.h"
+
 #include "util/coding.h"
 
 namespace leveldb {
@@ -80,32 +82,29 @@ Status WriteBatch::Iterate(Handler* handler) const {
 }
 
 int WriteBatchInternal::Count(const WriteBatch* b) {
-  return DecodeFixed32(b->rep_.data() + 8);
+  // TODO: see resp_ definition
+  return 0;
 }
 
 void WriteBatchInternal::SetCount(WriteBatch* b, int n) {
-  EncodeFixed32(&b->rep_[8], n);
+  // TODO: see resp_ definition
 }
 
 SequenceNumber WriteBatchInternal::Sequence(const WriteBatch* b) {
-  return SequenceNumber(DecodeFixed64(b->rep_.data()));
+  // TODO: get sequence number
+  return SequenceNumber(0);
 }
 
 void WriteBatchInternal::SetSequence(WriteBatch* b, SequenceNumber seq) {
-  EncodeFixed64(&b->rep_[0], seq);
+  // TODO: set sequence number
 }
 
 void WriteBatch::Put(const Slice& key, const Slice& value) {
-  WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
-  rep_.push_back(static_cast<char>(kTypeValue));
-  PutLengthPrefixedSlice(&rep_, key);
-  PutLengthPrefixedSlice(&rep_, value);
+  // TODO: use PutLengthPrefixedSlice to add key and value to rep_
 }
 
 void WriteBatch::Delete(const Slice& key) {
-  WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
-  rep_.push_back(static_cast<char>(kTypeDeletion));
-  PutLengthPrefixedSlice(&rep_, key);
+  // TODO
 }
 
 void WriteBatch::Append(const WriteBatch& source) {
@@ -113,6 +112,10 @@ void WriteBatch::Append(const WriteBatch& source) {
 }
 
 namespace {
+// TODO: MemTableInserter implement
+// - helper of memTable.
+// - difference between MemTable and MemTableInserter is that MemTableInserter
+// maintained the sequence number
 class MemTableInserter : public WriteBatch::Handler {
  public:
   SequenceNumber sequence_;
