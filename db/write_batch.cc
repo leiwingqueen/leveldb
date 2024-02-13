@@ -48,6 +48,7 @@ Status WriteBatch::Iterate(Handler* handler) const {
     return Status::Corruption("malformed WriteBatch (too small)");
   }
   // TODO: iterate implement
+  return Status::OK();
 }
 
 int WriteBatchInternal::Count(const WriteBatch* b) {
