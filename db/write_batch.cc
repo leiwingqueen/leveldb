@@ -52,12 +52,14 @@ Status WriteBatch::Iterate(Handler* handler) const {
 }
 
 int WriteBatchInternal::Count(const WriteBatch* b) {
-  // TODO: see resp_ definition
-  return 0;
+    // see resp_ definition
+    return DecodeFixed32(b->rep_.data()+8);
 }
 
 void WriteBatchInternal::SetCount(WriteBatch* b, int n) {
-  // TODO: see resp_ definition
+    // see resp_ definition
+    const char *p = b->rep_.data();
+    EncodeFixed32(p, n);
 }
 
 SequenceNumber WriteBatchInternal::Sequence(const WriteBatch* b) {
