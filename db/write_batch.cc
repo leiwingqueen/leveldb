@@ -42,13 +42,31 @@ void WriteBatch::Clear() {
 size_t WriteBatch::ApproximateSize() const { return rep_.size(); }
 
 // scan the rep_ data. check the tag in record and use handler to do the right operation
+// use GetLengthPrefixedSlice function to get the key value from Slice
 Status WriteBatch::Iterate(Handler* handler) const {
-  Slice input(rep_);
-  if (input.size() < kHeader) {
-    return Status::Corruption("malformed WriteBatch (too small)");
-  }
-  // TODO: iterate implement
-  return Status::OK();
+    Slice input(rep_);
+    if (input.size() < kHeader) {
+        return Status::Corruption("malformed WriteBatch (too small)");
+    }
+    // iterate implement
+    int count = WriteBatchInternal::Count(this);
+    input.remove_prefix(kHeader);
+    for (int i = 0; i < count; ++i) {
+        char tag = input[0];
+        input.remove_prefix(1);
+        if (tag == kTypeValue) {
+            uint32_t keySize;
+            GetVarint32(&input, &keySize);
+            GetVarint32(&input, &keySize);
+
+            handler->Put(Slice(input.data(),keySize),Slice)
+        }else if(tag==kTypeDeletion){
+
+        }else{
+            // Error type
+        }
+    }
+    return Status::OK();
 }
 
 int WriteBatchInternal::Count(const WriteBatch* b) {
@@ -58,25 +76,31 @@ int WriteBatchInternal::Count(const WriteBatch* b) {
 
 void WriteBatchInternal::SetCount(WriteBatch* b, int n) {
     // see resp_ definition
-    const char *p = b->rep_.data();
+    char* p = &b->rep_[8];
     EncodeFixed32(p, n);
 }
 
 SequenceNumber WriteBatchInternal::Sequence(const WriteBatch* b) {
-  // TODO: get sequence number
-  return SequenceNumber(0);
+  // get sequence number
+  uint64_t num = DecodeFixed64(b->rep_.data());
+  return SequenceNumber(num);
 }
 
 void WriteBatchInternal::SetSequence(WriteBatch* b, SequenceNumber seq) {
-  // TODO: set sequence number
+  // set sequence number
+    EncodeFixed64(&b->rep_[0],seq);
 }
 
 void WriteBatch::Put(const Slice& key, const Slice& value) {
-  // TODO: use PutLengthPrefixedSlice to add key and value to rep_
+  // use PutLengthPrefixedSlice to add key and value to rep_
+    this->rep_.push_back(static_cast<char>(kTypeValue));
+    PutLengthPrefixedSlice(&this->rep_, key);
+    PutLengthPrefixedSlice(&this->rep_, value);
 }
 
 void WriteBatch::Delete(const Slice& key) {
-  // TODO
+    this->rep_.push_back(static_cast<char>(kTypeDeletion));
+    PutLengthPrefixedSlice(&this->rep_, key);
 }
 
 void WriteBatch::Append(const WriteBatch& source) {
@@ -84,7 +108,6 @@ void WriteBatch::Append(const WriteBatch& source) {
 }
 
 namespace {
-// TODO: MemTableInserter implement
 // - helper of memTable.
 // - difference between MemTable and MemTableInserter is that MemTableInserter
 // maintained the sequence number
