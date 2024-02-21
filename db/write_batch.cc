@@ -57,6 +57,7 @@ Status WriteBatch::Iterate(Handler* handler) const {
         if (tag == kTypeValue) {
             uint32_t keySize;
             GetVarint32(&input, &keySize);
+            GetLengthPrefixedSlice()
             GetVarint32(&input, &keySize);
 
             handler->Put(Slice(input.data(),keySize),Slice)
