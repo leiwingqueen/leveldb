@@ -55,16 +55,20 @@ Status WriteBatch::Iterate(Handler* handler) const {
         char tag = input[0];
         input.remove_prefix(1);
         if (tag == kTypeValue) {
-            uint32_t keySize;
-            GetVarint32(&input, &keySize);
-            GetLengthPrefixedSlice()
-            GetVarint32(&input, &keySize);
-
-            handler->Put(Slice(input.data(),keySize),Slice)
+            Slice key,value;
+            if (!GetLengthPrefixedSlice(&input, &key) || !GetLengthPrefixedSlice(&input, &value)) {
+                return Status::Corruption("bad put format");
+            }
+            handler->Put(key, value);
         }else if(tag==kTypeDeletion){
-
+            Slice key;
+            if (!GetLengthPrefixedSlice(&input, &key)) {
+                return Status::Corruption("bad put format");
+            }
+            handler->Delete(key);
         }else{
             // Error type
+            return Status::Corruption("error type");
         }
     }
     return Status::OK();
