@@ -48,32 +48,19 @@ Status Writer::AddRecord(const Slice& slice) {
   return Status::OK();
 }
 
+// hint:
+// - use crc32c::Extend(type_crc_[t], ptr, length) to generate the crc code.
+// - use crc32c::Mask(crc) to generate 4 byte crc code
+// - header format: crc(4 byte)|length(2 byte)|type
+// - use dest_->append to append data to file, call the flush function after that append data to file
 Status Writer::EmitPhysicalRecord(RecordType t, const char* ptr,
                                   size_t length) {
   assert(length <= 0xffff);  // Must fit in two bytes
   assert(block_offset_ + kHeaderSize + length <= kBlockSize);
 
   // Format the header
-  char buf[kHeaderSize];
-  buf[4] = static_cast<char>(length & 0xff);
-  buf[5] = static_cast<char>(length >> 8);
-  buf[6] = static_cast<char>(t);
-
-  // Compute the crc of the record type and the payload.
-  uint32_t crc = crc32c::Extend(type_crc_[t], ptr, length);
-  crc = crc32c::Mask(crc);  // Adjust for storage
-  EncodeFixed32(buf, crc);
-
-  // Write the header and the payload
-  Status s = dest_->Append(Slice(buf, kHeaderSize));
-  if (s.ok()) {
-    s = dest_->Append(Slice(ptr, length));
-    if (s.ok()) {
-      s = dest_->Flush();
-    }
-  }
-  block_offset_ += kHeaderSize + length;
-  return s;
+  // TODO: implement
+  return Status::OK();
 }
 
 }  // namespace log
