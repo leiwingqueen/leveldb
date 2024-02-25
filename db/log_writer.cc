@@ -55,12 +55,31 @@ Status Writer::AddRecord(const Slice& slice) {
 // - use dest_->append to append data to file, call the flush function after that append data to file
 Status Writer::EmitPhysicalRecord(RecordType t, const char* ptr,
                                   size_t length) {
-  assert(length <= 0xffff);  // Must fit in two bytes
-  assert(block_offset_ + kHeaderSize + length <= kBlockSize);
+        assert(length <= 0xffff);  // Must fit in two bytes
+        assert(block_offset_ + kHeaderSize + length <= kBlockSize);
 
-  // Format the header
-  // TODO: implement
-  return Status::OK();
+        // Format the header
+        // calculate the crc32
+        uint32_t crc = crc32c::Extend(type_crc_[t], ptr, length);
+        crc = crc32c::Mask(crc);
+        char header[kHeaderSize];
+        for (int i = 0; i < 4; ++i) {
+            header[i] = static_cast<char>(crc & 0xFF);
+            crc >>= 8;
+        }
+        size_t size = length;
+        for (int i = 4; i < 6; ++i) {
+            header[i] = static_cast<char>(size & 0xFF);
+            size >>= 8;
+        }
+        header[6] = static_cast<char>(t);
+        // write header and content
+        Status status = dest_->Append(Slice(header, kHeaderSize));
+        if (!status.ok()){
+            return status;
+        }
+        status=dest_->Append(Slice(ptr, length));
+        return status;
 }
 
 }  // namespace log
