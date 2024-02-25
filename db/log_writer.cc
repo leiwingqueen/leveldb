@@ -37,15 +37,52 @@ Writer::~Writer() = default;
 // - use EmitPhysicalRecord to write record to the file
 // - consider: why we need to split record as 32kB when we append record to the file
 Status Writer::AddRecord(const Slice& slice) {
-  const char* ptr = slice.data();
-  size_t left = slice.size();
+        const char *ptr = slice.data();
+        size_t left = slice.size();
 
-  // Fragment the record if necessary and emit it.  Note that if slice
-  // is empty, we still want to iterate once to emit a single
-  // zero-length record
-
-  // TODO: implement add record
-  return Status::OK();
+        // Fragment the record if necessary and emit it.  Note that if slice
+        // is empty, we still want to iterate once to emit a single
+        // zero-length record
+        
+        // implement add record
+        std::string empty = "\x00\x00\x00\x00\x00\x00";
+        if (kBlockSize - block_offset_ < kHeaderSize) {
+            // in this case,write in a new block
+            dest_->Append(Slice(empty.data(), kBlockSize - block_offset_));
+            block_offset_ = 0;
+        }
+        bool begin = true;
+        bool end = false;
+        while (left > 0) {
+            // we need to write in a new block in this case
+            if (kBlockSize - block_offset_ < kHeaderSize) {
+                // in this case,write in a new block
+                dest_->Append(Slice(empty.data(), kBlockSize - block_offset_));
+                block_offset_ = 0;
+            }
+            // left size in block(exclude header)
+            int blockLeft = kBlockSize - block_offset_ - kHeaderSize;
+            end = blockLeft >= left;
+            RecordType type;
+            if (begin && end) {
+                type = RecordType::kFullType;
+            }else if(begin){
+                type=RecordType::kFirstType;
+            }else if(end){
+                type = RecordType::kLastType;
+            }else{
+                type = RecordType::kMiddleType;
+            }
+            size_t contentSize = left <= blockLeft ? left : blockLeft;
+            Status status = EmitPhysicalRecord(type, ptr, contentSize);
+            if (!status.ok()) {
+                return status;
+            }
+            ptr += contentSize;
+            left -= contentSize;
+            begin = false;
+        }
+        return Status::OK();
 }
 
 // hint:
