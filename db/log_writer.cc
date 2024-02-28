@@ -37,15 +37,47 @@ Writer::~Writer() = default;
 // - use EmitPhysicalRecord to write record to the file
 // - consider: why we need to split record as 32kB when we append record to the file
 Status Writer::AddRecord(const Slice& slice) {
-  const char* ptr = slice.data();
-  size_t left = slice.size();
+        const char *ptr = slice.data();
+        size_t left = slice.size();
 
-  // Fragment the record if necessary and emit it.  Note that if slice
-  // is empty, we still want to iterate once to emit a single
-  // zero-length record
+        // Fragment the record if necessary and emit it.  Note that if slice
+        // is empty, we still want to iterate once to emit a single
+        // zero-length record
 
-  // TODO: implement add record
-  return Status::OK();
+        // implement add record
+        std::string empty = "\x00\x00\x00\x00\x00\x00";
+        bool begin = true;
+        // allow size=0 slice write into the log
+        do{
+            // we need to write in a new block in this case
+            if (kBlockSize - block_offset_ < kHeaderSize) {
+                // in this case,write in a new block
+                dest_->Append(Slice(empty.data(), kBlockSize - block_offset_));
+                block_offset_ = 0;
+            }
+            // left size in block(exclude header)
+            int blockLeft = kBlockSize - block_offset_ - kHeaderSize;
+            bool end = blockLeft >= left;
+            RecordType type;
+            if (begin && end) {
+                type = RecordType::kFullType;
+            }else if(begin){
+                type=RecordType::kFirstType;
+            }else if(end){
+                type = RecordType::kLastType;
+            }else{
+                type = RecordType::kMiddleType;
+            }
+            size_t contentSize = left <= blockLeft ? left : blockLeft;
+            Status status = EmitPhysicalRecord(type, ptr, contentSize);
+            if (!status.ok()) {
+                return status;
+            }
+            ptr += contentSize;
+            left -= contentSize;
+            begin = false;
+        } while (left>0);
+        return Status::OK();
 }
 
 // hint:
@@ -55,12 +87,32 @@ Status Writer::AddRecord(const Slice& slice) {
 // - use dest_->append to append data to file, call the flush function after that append data to file
 Status Writer::EmitPhysicalRecord(RecordType t, const char* ptr,
                                   size_t length) {
-  assert(length <= 0xffff);  // Must fit in two bytes
-  assert(block_offset_ + kHeaderSize + length <= kBlockSize);
+        assert(length <= 0xffff);  // Must fit in two bytes
+        assert(block_offset_ + kHeaderSize + length <= kBlockSize);
 
-  // Format the header
-  // TODO: implement
-  return Status::OK();
+        // Format the header
+        // calculate the crc32
+        uint32_t crc = crc32c::Extend(type_crc_[t], ptr, length);
+        crc = crc32c::Mask(crc);
+        char header[kHeaderSize];
+        for (int i = 0; i < 4; ++i) {
+            header[i] = static_cast<char>(crc & 0xFF);
+            crc >>= 8;
+        }
+        size_t size = length;
+        for (int i = 4; i < 6; ++i) {
+            header[i] = static_cast<char>(size & 0xFF);
+            size >>= 8;
+        }
+        header[6] = static_cast<char>(t);
+        // write header and content
+        Status status = dest_->Append(Slice(header, kHeaderSize));
+        if (!status.ok()){
+            return status;
+        }
+        status=dest_->Append(Slice(ptr, length));
+        block_offset_ += kHeaderSize + length;
+        return status;
 }
 
 }  // namespace log
