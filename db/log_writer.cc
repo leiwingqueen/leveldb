@@ -43,17 +43,12 @@ Status Writer::AddRecord(const Slice& slice) {
         // Fragment the record if necessary and emit it.  Note that if slice
         // is empty, we still want to iterate once to emit a single
         // zero-length record
-        
+
         // implement add record
         std::string empty = "\x00\x00\x00\x00\x00\x00";
-        if (kBlockSize - block_offset_ < kHeaderSize) {
-            // in this case,write in a new block
-            dest_->Append(Slice(empty.data(), kBlockSize - block_offset_));
-            block_offset_ = 0;
-        }
         bool begin = true;
-        bool end = false;
-        while (left > 0) {
+        // allow size=0 slice write into the log
+        do{
             // we need to write in a new block in this case
             if (kBlockSize - block_offset_ < kHeaderSize) {
                 // in this case,write in a new block
@@ -62,7 +57,7 @@ Status Writer::AddRecord(const Slice& slice) {
             }
             // left size in block(exclude header)
             int blockLeft = kBlockSize - block_offset_ - kHeaderSize;
-            end = blockLeft >= left;
+            bool end = blockLeft >= left;
             RecordType type;
             if (begin && end) {
                 type = RecordType::kFullType;
@@ -81,7 +76,7 @@ Status Writer::AddRecord(const Slice& slice) {
             ptr += contentSize;
             left -= contentSize;
             begin = false;
-        }
+        } while (left>0);
         return Status::OK();
 }
 
@@ -116,6 +111,7 @@ Status Writer::EmitPhysicalRecord(RecordType t, const char* ptr,
             return status;
         }
         status=dest_->Append(Slice(ptr, length));
+        block_offset_ += kHeaderSize + length;
         return status;
 }
 
