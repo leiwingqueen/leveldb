@@ -502,7 +502,6 @@ Status DBImpl::RecoverLogFile(uint64_t log_number, bool last_log,
   return status;
 }
 
-// TODO: implement WriteLevel0Table
 // hint:
 // - VersionSet contains the next_file_number_
 // - pending_outputs_ . Set of table files to protect from deletion because they are
