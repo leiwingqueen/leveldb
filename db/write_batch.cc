@@ -41,48 +41,49 @@ void WriteBatch::Clear() {
 
 size_t WriteBatch::ApproximateSize() const { return rep_.size(); }
 
-// scan the rep_ data. check the tag in record and use handler to do the right operation
-// use GetLengthPrefixedSlice function to get the key value from Slice
+// scan the rep_ data. check the tag in record and use handler to do the right
+// operation use GetLengthPrefixedSlice function to get the key value from Slice
 Status WriteBatch::Iterate(Handler* handler) const {
-    Slice input(rep_);
-    if (input.size() < kHeader) {
-        return Status::Corruption("malformed WriteBatch (too small)");
+  Slice input(rep_);
+  if (input.size() < kHeader) {
+    return Status::Corruption("malformed WriteBatch (too small)");
+  }
+  // iterate implement
+  int count = WriteBatchInternal::Count(this);
+  input.remove_prefix(kHeader);
+  for (int i = 0; i < count; ++i) {
+    char tag = input[0];
+    input.remove_prefix(1);
+    if (tag == kTypeValue) {
+      Slice key, value;
+      if (!GetLengthPrefixedSlice(&input, &key) ||
+          !GetLengthPrefixedSlice(&input, &value)) {
+        return Status::Corruption("bad put format");
+      }
+      handler->Put(key, value);
+    } else if (tag == kTypeDeletion) {
+      Slice key;
+      if (!GetLengthPrefixedSlice(&input, &key)) {
+        return Status::Corruption("bad put format");
+      }
+      handler->Delete(key);
+    } else {
+      // Error type
+      return Status::Corruption("error type");
     }
-    // iterate implement
-    int count = WriteBatchInternal::Count(this);
-    input.remove_prefix(kHeader);
-    for (int i = 0; i < count; ++i) {
-        char tag = input[0];
-        input.remove_prefix(1);
-        if (tag == kTypeValue) {
-            Slice key,value;
-            if (!GetLengthPrefixedSlice(&input, &key) || !GetLengthPrefixedSlice(&input, &value)) {
-                return Status::Corruption("bad put format");
-            }
-            handler->Put(key, value);
-        }else if(tag==kTypeDeletion){
-            Slice key;
-            if (!GetLengthPrefixedSlice(&input, &key)) {
-                return Status::Corruption("bad put format");
-            }
-            handler->Delete(key);
-        }else{
-            // Error type
-            return Status::Corruption("error type");
-        }
-    }
-    return Status::OK();
+  }
+  return Status::OK();
 }
 
 int WriteBatchInternal::Count(const WriteBatch* b) {
-    // see resp_ definition
-    return DecodeFixed32(b->rep_.data()+8);
+  // see resp_ definition
+  return DecodeFixed32(b->rep_.data() + 8);
 }
 
 void WriteBatchInternal::SetCount(WriteBatch* b, int n) {
-    // see resp_ definition
-    char* p = &b->rep_[8];
-    EncodeFixed32(p, n);
+  // see resp_ definition
+  char* p = &b->rep_[8];
+  EncodeFixed32(p, n);
 }
 
 SequenceNumber WriteBatchInternal::Sequence(const WriteBatch* b) {
@@ -93,19 +94,25 @@ SequenceNumber WriteBatchInternal::Sequence(const WriteBatch* b) {
 
 void WriteBatchInternal::SetSequence(WriteBatch* b, SequenceNumber seq) {
   // set sequence number
-    EncodeFixed64(&b->rep_[0],seq);
+  EncodeFixed64(&b->rep_[0], seq);
 }
 
 void WriteBatch::Put(const Slice& key, const Slice& value) {
   // use PutLengthPrefixedSlice to add key and value to rep_
-    this->rep_.push_back(static_cast<char>(kTypeValue));
-    PutLengthPrefixedSlice(&this->rep_, key);
-    PutLengthPrefixedSlice(&this->rep_, value);
+  this->rep_.push_back(static_cast<char>(kTypeValue));
+  PutLengthPrefixedSlice(&this->rep_, key);
+  PutLengthPrefixedSlice(&this->rep_, value);
+  // update count
+  int count = WriteBatchInternal::Count(this);
+  WriteBatchInternal::SetCount(this, count + 1);
 }
 
 void WriteBatch::Delete(const Slice& key) {
-    this->rep_.push_back(static_cast<char>(kTypeDeletion));
-    PutLengthPrefixedSlice(&this->rep_, key);
+  this->rep_.push_back(static_cast<char>(kTypeDeletion));
+  PutLengthPrefixedSlice(&this->rep_, key);
+  // update count
+  int count = WriteBatchInternal::Count(this);
+  WriteBatchInternal::SetCount(this, count + 1);
 }
 
 void WriteBatch::Append(const WriteBatch& source) {
