@@ -24,7 +24,7 @@ class CorruptionTest : public testing::Test {
  public:
   CorruptionTest()
       : db_(nullptr),
-        dbname_("~/memenv/corruption_test"),
+        dbname_("/memenv/corruption_test"),
         tiny_cache_(NewLRUCache(100)) {
     options_.env = &env_;
     options_.block_cache = tiny_cache_;

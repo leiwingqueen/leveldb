@@ -27,8 +27,10 @@ namespace leveldb {
 // and sync.
 Status BuildTable(const std::string& dbname, Env* env, const Options& options,
                   TableCache* table_cache, Iterator* iter, FileMetaData* meta) {
+  meta->file_size = 0;
+  iter->SeekToFirst();
   std::string fileName = TableFileName(dbname, meta->number);
-  Status s = Status::OK();
+  Status s;
   if (iter->Valid()) {
     // open a file
     WritableFile* file;
@@ -47,6 +49,10 @@ Status BuildTable(const std::string& dbname, Env* env, const Options& options,
       meta->largest.DecodeFrom(key);
     }
     s = builder->Finish();
+    if (s.ok()) {
+      meta->file_size = builder->FileSize();
+      assert(meta->file_size > 0);
+    }
     delete builder;
     if (s.ok()) {
       s = file->Sync();
@@ -55,10 +61,26 @@ Status BuildTable(const std::string& dbname, Env* env, const Options& options,
       s = file->Close();
     }
     delete file;
-    if (!s.ok()) {
-      // error, do not need to keep the file
-      env->RemoveFile(fileName);
+    file = nullptr;
+
+    if (s.ok()) {
+      // Verify that the table is usable
+      Iterator* it = table_cache->NewIterator(ReadOptions(), meta->number,
+                                              meta->file_size);
+      s = it->status();
+      delete it;
     }
+  }
+
+  // Check for input iterator errors
+  if (!iter->status().ok()) {
+    s = iter->status();
+  }
+
+  if (s.ok() && meta->file_size > 0) {
+    // Keep it
+  } else {
+    env->RemoveFile(fileName);
   }
   return s;
 }
