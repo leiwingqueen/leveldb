@@ -1,4 +1,4 @@
-// Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+// Copyright (c) 2011x The LevelDB Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
@@ -24,7 +24,7 @@ class CorruptionTest : public testing::Test {
  public:
   CorruptionTest()
       : db_(nullptr),
-        dbname_("/memenv/corruption_test"),
+        dbname_("~/memenv/corruption_test"),
         tiny_cache_(NewLRUCache(100)) {
     options_.env = &env_;
     options_.block_cache = tiny_cache_;

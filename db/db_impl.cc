@@ -4,14 +4,6 @@
 
 #include "db/db_impl.h"
 
-#include <algorithm>
-#include <atomic>
-#include <cstdint>
-#include <cstdio>
-#include <set>
-#include <string>
-#include <vector>
-
 #include "db/builder.h"
 #include "db/db_iter.h"
 #include "db/dbformat.h"
@@ -22,11 +14,20 @@
 #include "db/table_cache.h"
 #include "db/version_set.h"
 #include "db/write_batch_internal.h"
+#include <algorithm>
+#include <atomic>
+#include <cstdint>
+#include <cstdio>
+#include <set>
+#include <string>
+#include <vector>
+
 #include "leveldb/db.h"
 #include "leveldb/env.h"
 #include "leveldb/status.h"
 #include "leveldb/table.h"
 #include "leveldb/table_builder.h"
+
 #include "port/port.h"
 #include "table/block.h"
 #include "table/merger.h"
@@ -179,6 +180,7 @@ DBImpl::~DBImpl() {
 }
 
 Status DBImpl::NewDB() {
+  std::printf("create database...dbname:%s\n", dbname_.c_str());
   VersionEdit new_db;
   new_db.SetComparatorName(user_comparator()->Name());
   new_db.SetLogNumber(0);
@@ -504,7 +506,8 @@ Status DBImpl::RecoverLogFile(uint64_t log_number, bool last_log,
 
 // hint:
 // - VersionSet contains the next_file_number_
-// - pending_outputs_ . Set of table files to protect from deletion because they are
+// - pending_outputs_ . Set of table files to protect from deletion because they
+// are
 //  part of ongoing compactions.
 Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
                                 Version* base) {
