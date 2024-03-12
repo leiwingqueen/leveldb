@@ -119,9 +119,9 @@ void MemTable::Add(SequenceNumber s, ValueType type, const Slice& key,
   memcpy(p, value.data(), value.size());
   table_.Insert(buffer);
   // print result
-  std::fprintf(stdout, "memtable add[finish]...");
-  printSlice(key);
-  std::fprintf(stdout, "\n");
+  // std::fprintf(stdout, "memtable add[finish]...");
+  // printSlice(key);
+  // std::fprintf(stdout, "\n");
 }
 
 // hint:
