@@ -1,0 +1,33 @@
+//
+// Created by leiwingqueen on 2024/3/12.
+//
+#include "leveldb/db.h"
+
+#include "gtest/gtest.h"
+
+namespace leveldb {
+
+class SimpleDBTest : public testing::Test {
+ protected:
+  void SetUp() override {
+    leveldb::DB* db;
+    leveldb::Options options;
+    options.create_if_missing = true;
+    leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);
+    assert(status.ok());
+  }
+  DB* db_;
+};
+
+TEST_F(SimpleDBTest, t1) {
+  WriteOptions write_options;
+  write_options.sync = true;
+  Status s = db_->Put(write_options, "key1", "value1");
+  ASSERT_TRUE(s.ok());
+  std::string value;
+  ReadOptions read_options;
+  s = db_->Get(read_options, "key1", &value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(value, "value1");
+}
+}  // namespace leveldb
