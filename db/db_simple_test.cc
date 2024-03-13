@@ -10,10 +10,9 @@ namespace leveldb {
 class SimpleDBTest : public testing::Test {
  protected:
   void SetUp() override {
-    leveldb::DB* db;
     leveldb::Options options;
     options.create_if_missing = true;
-    leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db);
+    leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db_);
     assert(status.ok());
   }
   DB* db_;
