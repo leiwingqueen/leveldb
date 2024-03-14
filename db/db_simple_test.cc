@@ -29,4 +29,20 @@ TEST_F(SimpleDBTest, t1) {
   ASSERT_TRUE(s.ok());
   ASSERT_EQ(value, "value1");
 }
+
+TEST_F(SimpleDBTest, t2) {
+  WriteOptions write_options;
+  write_options.sync = false;
+  for (int i = 0; i < 100000; ++i) {
+    Status s = db_->Put(write_options, "key" + std::to_string(i),
+                        "value" + std::to_string(i));
+    ASSERT_TRUE(s.ok());
+  }
+  std::string value;
+  ReadOptions read_options;
+  Status s = db_->Get(read_options, "key1", &value);
+  ASSERT_TRUE(s.ok());
+  ASSERT_EQ(value, "value1");
+}
+
 }  // namespace leveldb
