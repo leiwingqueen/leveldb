@@ -114,6 +114,9 @@ void BlockBuilder::Add(const Slice& key, const Slice& value) {
   // update last_key and counter
   last_key_.resize(shared);
   last_key_.append(key.data() + shared, unshared);
+  std::printf("last_key:%s,size:%lu\n", Slice(last_key_).ToString().c_str(),
+              last_key_.size());
+  std::printf("key:%s,size:%lu\n", key.ToString().c_str(), key.size());
   assert(Slice(last_key_) == key);
   counter_++;
 }
