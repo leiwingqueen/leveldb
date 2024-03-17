@@ -46,7 +46,10 @@ BlockBuilder::BlockBuilder(const Options* options)
 
 void BlockBuilder::Reset() {
   // implement BlockBuilder::Reset
+  buffer_.clear();
+  last_key_.clear();
   counter_ = 0;
+  restarts_.clear();
   restarts_.push_back(0);
   finished_ = false;
 }
@@ -92,7 +95,11 @@ void BlockBuilder::Add(const Slice& key, const Slice& value) {
   //     value: char[value_length]
   // shared_bytes == 0 for restart points.
   // remember to update last_key_ and counter_
-
+  if (counter_ >= options_->block_restart_interval) {
+    last_key_.clear();
+    counter_ = 0;
+    restarts_.push_back(buffer_.size());
+  }
   size_t shared = 0;
   int size = std::min(last_key_piece.size(), key.size());
   while (shared < size && last_key_piece[shared] == key[shared]) {
@@ -102,16 +109,13 @@ void BlockBuilder::Add(const Slice& key, const Slice& value) {
   PutVarint32(&buffer_, shared);
   PutVarint32(&buffer_, unshared);
   PutVarint32(&buffer_, value.size());
-  buffer_.append(key.data() + unshared, unshared);
+  buffer_.append(key.data() + shared, unshared);
   buffer_.append(value.data(), value.size());
   // update last_key and counter
-  last_key_ = key.ToString();
+  last_key_.resize(shared);
+  last_key_.append(key.data() + shared, unshared);
+  assert(Slice(last_key_) == key);
   counter_++;
-  if (counter_ >= options_->block_restart_interval) {
-    last_key_ = "";
-    counter_ = 0;
-    restarts_.push_back(buffer_.size());
-  }
 }
 
 }  // namespace leveldb
