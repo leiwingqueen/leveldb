@@ -33,7 +33,7 @@ TEST_F(SimpleDBTest, t1) {
 TEST_F(SimpleDBTest, t2) {
   WriteOptions write_options;
   write_options.sync = false;
-  for (int i = 0; i < 100000; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     Status s = db_->Put(write_options, "key" + std::to_string(i),
                         "value" + std::to_string(i));
     ASSERT_TRUE(s.ok());

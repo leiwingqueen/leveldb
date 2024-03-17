@@ -14,7 +14,7 @@
 #include "leveldb/iterator.h"
 
 namespace leveldb {
-// TODO: implement build table
+// implement build table
 // hint:
 // - meta->number: get the current filename of database
 // - TableBuilder* builder = new TableBuilder(options, file); use this statement
