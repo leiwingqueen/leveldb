@@ -36,6 +36,8 @@
 
 #include "util/coding.h"
 
+#include "iostream"
+
 namespace leveldb {
 
 BlockBuilder::BlockBuilder(const Options* options)
@@ -95,14 +97,14 @@ void BlockBuilder::Add(const Slice& key, const Slice& value) {
   //     value: char[value_length]
   // shared_bytes == 0 for restart points.
   // remember to update last_key_ and counter_
+  size_t shared = 0;
   if (counter_ >= options_->block_restart_interval) {
-    last_key_.clear();
+    last_key_piece.clear();
     counter_ = 0;
     restarts_.push_back(buffer_.size());
   }
-  size_t shared = 0;
   int size = std::min(last_key_piece.size(), key.size());
-  while (shared < size && last_key_piece[shared] == key[shared]) {
+  while ((shared < size) && (last_key_piece[shared] == key[shared])) {
     shared++;
   }
   size_t unshared = key.size() - shared;
@@ -114,9 +116,9 @@ void BlockBuilder::Add(const Slice& key, const Slice& value) {
   // update last_key and counter
   last_key_.resize(shared);
   last_key_.append(key.data() + shared, unshared);
-  std::printf("last_key:%s,size:%lu\n", Slice(last_key_).ToString().c_str(),
-              last_key_.size());
-  std::printf("key:%s,size:%lu\n", key.ToString().c_str(), key.size());
+  /*std::cout << "last_key:" << last_key_ << ",key:" << key.ToString()
+            << std::endl;
+  std::cout << "shard:" << shared << std::endl;*/
   assert(Slice(last_key_) == key);
   counter_++;
 }
