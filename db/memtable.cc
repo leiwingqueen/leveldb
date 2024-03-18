@@ -170,9 +170,9 @@ bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
     // deletion
     *s = Status::NotFound("not found");
   }
-  std::fprintf(stdout, "memtable get[finish]...");
-  printSlice(key.user_key());
-  std::fprintf(stdout, "\n");
+  /*  std::fprintf(stdout, "memtable get[finish]...");
+    printSlice(key.user_key());
+    std::fprintf(stdout, "\n");*/
   return true;
 }
 
