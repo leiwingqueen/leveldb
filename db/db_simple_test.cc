@@ -4,6 +4,7 @@
 #include "leveldb/db.h"
 
 #include "gtest/gtest.h"
+#include "iostream"
 
 namespace leveldb {
 
@@ -13,7 +14,13 @@ class SimpleDBTest : public testing::Test {
     leveldb::Options options;
     options.create_if_missing = true;
     leveldb::Status status = leveldb::DB::Open(options, "/tmp/testdb", &db_);
+    if (!status.ok()) {
+      std::cout << "open db error:" << status.ToString() << std::endl;
+    }
     assert(status.ok());
+  }
+  void TearDown() override {
+    delete db_;
   }
   DB* db_;
 };
