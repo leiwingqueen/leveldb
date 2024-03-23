@@ -1028,6 +1028,10 @@ void VersionSet::MarkFileNumberUsed(uint64_t number) {
   }
 }
 
+// calculate the best level for compaction
+// hint:
+// - level 0: number of files
+// - others: total size of files
 void VersionSet::Finalize(Version* v) {
   // Precomputed best level for next compaction
   int best_level = -1;
