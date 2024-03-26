@@ -4,16 +4,17 @@
 
 #include "db/version_set.h"
 
-#include <algorithm>
-#include <cstdio>
-
 #include "db/filename.h"
 #include "db/log_reader.h"
 #include "db/log_writer.h"
 #include "db/memtable.h"
 #include "db/table_cache.h"
+#include <algorithm>
+#include <cstdio>
+
 #include "leveldb/env.h"
 #include "leveldb/table_builder.h"
+
 #include "table/merger.h"
 #include "table/two_level_iterator.h"
 #include "util/coding.h"
@@ -1188,22 +1189,28 @@ int64_t VersionSet::MaxNextLevelOverlappingBytes() {
 // Stores the minimal range that covers all entries in inputs in
 // *smallest, *largest.
 // REQUIRES: inputs is not empty
+
+// implement get range
+// hint:
+// - smallest and largest are InternalKey
+// - InternalKey::Clear() is used to clear the key
 void VersionSet::GetRange(const std::vector<FileMetaData*>& inputs,
                           InternalKey* smallest, InternalKey* largest) {
   assert(!inputs.empty());
+  // implement
   smallest->Clear();
   largest->Clear();
-  for (size_t i = 0; i < inputs.size(); i++) {
-    FileMetaData* f = inputs[i];
+  for (int i = 0; i < inputs.size(); ++i) {
+    FileMetaData* file = inputs[i];
     if (i == 0) {
-      *smallest = f->smallest;
-      *largest = f->largest;
+      *smallest = file->smallest;
+      *largest = file->largest;
     } else {
-      if (icmp_.Compare(f->smallest, *smallest) < 0) {
-        *smallest = f->smallest;
+      if (icmp_.Compare(file->smallest, *smallest) < 0) {
+        *smallest = file->smallest;
       }
-      if (icmp_.Compare(f->largest, *largest) > 0) {
-        *largest = f->largest;
+      if (icmp_.Compare(file->largest, *largest) > 0) {
+        *largest = file->largest;
       }
     }
   }
@@ -1254,6 +1261,11 @@ Iterator* VersionSet::MakeInputIterator(Compaction* c) {
   return result;
 }
 
+// pick compaction implement
+// hint:
+// - find the first file that comes after compact_pointer_[level] that largest
+// key is bigger than compact_pointer_[level]
+// - if no such file, return the first file in the level
 Compaction* VersionSet::PickCompaction() {
   Compaction* c;
   int level;
@@ -1269,16 +1281,16 @@ Compaction* VersionSet::PickCompaction() {
     c = new Compaction(options_, level);
 
     // Pick the first file that comes after compact_pointer_[level]
-    for (size_t i = 0; i < current_->files_[level].size(); i++) {
-      FileMetaData* f = current_->files_[level][i];
+    // implement
+    for (int i = 0; i < current_->files_[level].size(); ++i) {
+      FileMetaData* file = current_->files_[level][i];
       if (compact_pointer_[level].empty() ||
-          icmp_.Compare(f->largest.Encode(), compact_pointer_[level]) > 0) {
-        c->inputs_[0].push_back(f);
+          icmp_.Compare(file->largest.Encode(), compact_pointer_[level]) > 0) {
+        c->inputs_[0].push_back(file);
         break;
       }
     }
-    if (c->inputs_[0].empty()) {
-      // Wrap-around to the beginning of the key space
+    if (c->inputs_[0].size() == 0) {
       c->inputs_[0].push_back(current_->files_[level][0]);
     }
   } else if (seek_compaction) {
@@ -1348,20 +1360,21 @@ FileMetaData* FindSmallestBoundaryFile(
   return smallest_boundary_file;
 }
 
-// Extracts the largest file b1 from |compaction_files| and then searches for a
-// b2 in |level_files| for which user_key(u1) = user_key(l2). If it finds such a
-// file b2 (known as a boundary file) it adds it to |compaction_files| and then
-// searches again using this new upper bound.
+// Extracts the largest file b1 from |compaction_files| and then searches for
+// a b2 in |level_files| for which user_key(u1) = user_key(l2). If it finds
+// such a file b2 (known as a boundary file) it adds it to |compaction_files|
+// and then searches again using this new upper bound.
 //
 // If there are two blocks, b1=(l1, u1) and b2=(l2, u2) and
 // user_key(u1) = user_key(l2), and if we compact b1 but not b2 then a
 // subsequent get operation will yield an incorrect result because it will
-// return the record from b2 in level i rather than from b1 because it searches
-// level by level for records matching the supplied user key.
+// return the record from b2 in level i rather than from b1 because it
+// searches level by level for records matching the supplied user key.
 //
 // parameters:
 //   in     level_files:      List of files to search for boundary files.
-//   in/out compaction_files: List of files to extend by adding boundary files.
+//   in/out compaction_files: List of files to extend by adding boundary
+//   files.
 void AddBoundaryInputs(const InternalKeyComparator& icmp,
                        const std::vector<FileMetaData*>& level_files,
                        std::vector<FileMetaData*>* compaction_files) {
