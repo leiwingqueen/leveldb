@@ -1188,25 +1188,15 @@ int64_t VersionSet::MaxNextLevelOverlappingBytes() {
 // Stores the minimal range that covers all entries in inputs in
 // *smallest, *largest.
 // REQUIRES: inputs is not empty
+
+// TODO: implement get range
+// hint:
+// - smallest and largest are InternalKey
+// - InternalKey::Clear() is used to clear the key
 void VersionSet::GetRange(const std::vector<FileMetaData*>& inputs,
                           InternalKey* smallest, InternalKey* largest) {
   assert(!inputs.empty());
-  smallest->Clear();
-  largest->Clear();
-  for (size_t i = 0; i < inputs.size(); i++) {
-    FileMetaData* f = inputs[i];
-    if (i == 0) {
-      *smallest = f->smallest;
-      *largest = f->largest;
-    } else {
-      if (icmp_.Compare(f->smallest, *smallest) < 0) {
-        *smallest = f->smallest;
-      }
-      if (icmp_.Compare(f->largest, *largest) > 0) {
-        *largest = f->largest;
-      }
-    }
-  }
+  // TODO: implement
 }
 
 // Stores the minimal range that covers all entries in inputs1 and inputs2
@@ -1254,6 +1244,10 @@ Iterator* VersionSet::MakeInputIterator(Compaction* c) {
   return result;
 }
 
+// TODO: pick compaction implement
+// hint:
+// - find the first file that comes after compact_pointer_[level] that largest key is bigger than compact_pointer_[level]
+// - if no such file, return the first file in the level
 Compaction* VersionSet::PickCompaction() {
   Compaction* c;
   int level;
@@ -1269,18 +1263,7 @@ Compaction* VersionSet::PickCompaction() {
     c = new Compaction(options_, level);
 
     // Pick the first file that comes after compact_pointer_[level]
-    for (size_t i = 0; i < current_->files_[level].size(); i++) {
-      FileMetaData* f = current_->files_[level][i];
-      if (compact_pointer_[level].empty() ||
-          icmp_.Compare(f->largest.Encode(), compact_pointer_[level]) > 0) {
-        c->inputs_[0].push_back(f);
-        break;
-      }
-    }
-    if (c->inputs_[0].empty()) {
-      // Wrap-around to the beginning of the key space
-      c->inputs_[0].push_back(current_->files_[level][0]);
-    }
+    // TODO: implement
   } else if (seek_compaction) {
     level = current_->file_to_compact_level_;
     c = new Compaction(options_, level);
