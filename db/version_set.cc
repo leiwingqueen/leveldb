@@ -1284,7 +1284,7 @@ Compaction* VersionSet::PickCompaction() {
     // implement
     for (int i = 0; i < current_->files_[level].size(); ++i) {
       FileMetaData* file = current_->files_[level][i];
-      if (compact_pointer_[level] == nullptr ||
+      if (compact_pointer_[level].empty() ||
           icmp_.Compare(file->largest.Encode(), compact_pointer_[level]) > 0) {
         c->inputs_[0].push_back(file);
         break;
