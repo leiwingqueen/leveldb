@@ -4,16 +4,17 @@
 
 #include "db/version_set.h"
 
-#include <algorithm>
-#include <cstdio>
-
 #include "db/filename.h"
 #include "db/log_reader.h"
 #include "db/log_writer.h"
 #include "db/memtable.h"
 #include "db/table_cache.h"
+#include <algorithm>
+#include <cstdio>
+
 #include "leveldb/env.h"
 #include "leveldb/table_builder.h"
+
 #include "table/merger.h"
 #include "table/two_level_iterator.h"
 #include "util/coding.h"
@@ -1189,14 +1190,30 @@ int64_t VersionSet::MaxNextLevelOverlappingBytes() {
 // *smallest, *largest.
 // REQUIRES: inputs is not empty
 
-// TODO: implement get range
+// implement get range
 // hint:
 // - smallest and largest are InternalKey
 // - InternalKey::Clear() is used to clear the key
 void VersionSet::GetRange(const std::vector<FileMetaData*>& inputs,
                           InternalKey* smallest, InternalKey* largest) {
   assert(!inputs.empty());
-  // TODO: implement
+  // implement
+  smallest->Clear();
+  largest->Clear();
+  for (int i = 0; i < inputs.size(); ++i) {
+    FileMetaData* file = inputs[i];
+    if (i == 0) {
+      *smallest = file->smallest;
+      *largest = file->largest;
+    } else {
+      if (icmp_.Compare(file->smallest, *smallest) < 0) {
+        *smallest = file->smallest;
+      }
+      if (icmp_.Compare(file->largest, *largest) > 0) {
+        *largest = file->largest;
+      }
+    }
+  }
 }
 
 // Stores the minimal range that covers all entries in inputs1 and inputs2
@@ -1246,7 +1263,8 @@ Iterator* VersionSet::MakeInputIterator(Compaction* c) {
 
 // TODO: pick compaction implement
 // hint:
-// - find the first file that comes after compact_pointer_[level] that largest key is bigger than compact_pointer_[level]
+// - find the first file that comes after compact_pointer_[level] that largest
+// key is bigger than compact_pointer_[level]
 // - if no such file, return the first file in the level
 Compaction* VersionSet::PickCompaction() {
   Compaction* c;
@@ -1264,6 +1282,7 @@ Compaction* VersionSet::PickCompaction() {
 
     // Pick the first file that comes after compact_pointer_[level]
     // TODO: implement
+
   } else if (seek_compaction) {
     level = current_->file_to_compact_level_;
     c = new Compaction(options_, level);
