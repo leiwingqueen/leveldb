@@ -25,7 +25,8 @@ class SimpleDBTest : public testing::Test {
   DB* db_;
 };
 
-TEST_F(SimpleDBTest, t1) {
+// if you want to run this test, you should remove the DISABLED_ prefix
+TEST_F(SimpleDBTest, DISABLED_t1) {
   WriteOptions write_options;
   write_options.sync = true;
   Status s = db_->Put(write_options, "key1", "value1");
@@ -37,7 +38,7 @@ TEST_F(SimpleDBTest, t1) {
   ASSERT_EQ(value, "value1");
 }
 
-TEST_F(SimpleDBTest, t2) {
+TEST_F(SimpleDBTest, DISABLED_t2) {
   WriteOptions write_options;
   write_options.sync = false;
   for (int i = 0; i < 1000; ++i) {

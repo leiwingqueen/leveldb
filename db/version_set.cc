@@ -511,31 +511,30 @@ void Version::GetOverlappingInputs(int level, const InternalKey* begin,
     user_end = end->user_key();
   }
   const Comparator* user_cmp = vset_->icmp_.user_comparator();
-  for (int i = 0; i < files_->size();) {
+  for (size_t i = 0; i < files_[level].size();) {
     FileMetaData* file = files_[level][i++];
+    const Slice file_start = file->smallest.user_key();
+    const Slice file_end = file->largest.user_key();
+
     // check if the file overlaps with the range
-    if (begin != nullptr &&
-            user_cmp->Compare(file->largest.user_key(), user_begin) < 0 ||
-        end != nullptr &&
-            user_cmp->Compare(file->smallest.user_key(), user_end) > 0) {
+    if ((begin != nullptr && user_cmp->Compare(file_end, user_begin) < 0) ||
+        (end != nullptr && user_cmp->Compare(file_start, user_end) > 0)) {
       continue;
     }
     inputs->push_back(file);
     if (level == 0) {
       bool overlap = false;
-      if (begin != nullptr &&
-          user_cmp->Compare(file->smallest.user_key(), user_begin) < 0) {
-        user_begin = file->smallest.user_key();
+      if (begin != nullptr && user_cmp->Compare(file_start, user_begin) < 0) {
+        user_begin = file_start;
         overlap = true;
       }
-      if (end != nullptr &&
-          user_cmp->Compare(file->largest.user_key(), user_end) > 0) {
-        user_end = file->largest.user_key();
+      if (end != nullptr && user_cmp->Compare(file_end, user_end) > 0) {
+        user_end = file_end;
         overlap = true;
       }
       if (overlap) {
-        i = 0;
         inputs->clear();
+        i = 0;
       }
     }
   }
