@@ -29,22 +29,24 @@ class MergingIterator : public Iterator {
   bool Valid() const override { return (current_ != nullptr); }
 
   void SeekToFirst() override {
-    for (int i = 0; i < n_; i++) {
-      children_[i].SeekToFirst();
-    }
-    FindSmallest();
-    direction_ = kForward;
+    // TODO: Implement this method.
+    // Hint: You can use the FindSmallest() method.
+    // Hint: You can use the SeekToFirst() method of the children.
+    // Hint: remember to set the direction to kForward.
   }
 
   void SeekToLast() override {
-    for (int i = 0; i < n_; i++) {
-      children_[i].SeekToLast();
-    }
-    FindLargest();
-    direction_ = kReverse;
+    // TODO: Implement this method.
+    // Hint: You can use the FindLargest() method.
+    // Hint: You can use the SeekToLast() method of the children.
+    // Hint: remember to set the direction to kReverse.
   }
 
   void Seek(const Slice& target) override {
+    // TODO: Implement this method
+    // Hint: You can use the Seek() method of the children.
+    // Hint: remember to set the direction to kForward.
+    // Hint: remember to call FindSmallest() after seeking.
     for (int i = 0; i < n_; i++) {
       children_[i].Seek(target);
     }
@@ -60,22 +62,8 @@ class MergingIterator : public Iterator {
     // true for all of the non-current_ children since current_ is
     // the smallest child and key() == current_->key().  Otherwise,
     // we explicitly position the non-current_ children.
-    if (direction_ != kForward) {
-      for (int i = 0; i < n_; i++) {
-        IteratorWrapper* child = &children_[i];
-        if (child != current_) {
-          child->Seek(key());
-          if (child->Valid() &&
-              comparator_->Compare(key(), child->key()) == 0) {
-            child->Next();
-          }
-        }
-      }
-      direction_ = kForward;
-    }
 
-    current_->Next();
-    FindSmallest();
+    // TODO: Implement this method.
   }
 
   void Prev() override {
@@ -86,25 +74,8 @@ class MergingIterator : public Iterator {
     // true for all of the non-current_ children since current_ is
     // the largest child and key() == current_->key().  Otherwise,
     // we explicitly position the non-current_ children.
-    if (direction_ != kReverse) {
-      for (int i = 0; i < n_; i++) {
-        IteratorWrapper* child = &children_[i];
-        if (child != current_) {
-          child->Seek(key());
-          if (child->Valid()) {
-            // Child is at first entry >= key().  Step back one to be < key()
-            child->Prev();
-          } else {
-            // Child has no entries >= key().  Position at last entry.
-            child->SeekToLast();
-          }
-        }
-      }
-      direction_ = kReverse;
-    }
 
-    current_->Prev();
-    FindLargest();
+    // TODO: Implement this method.
   }
 
   Slice key() const override {
@@ -146,33 +117,19 @@ class MergingIterator : public Iterator {
 };
 
 void MergingIterator::FindSmallest() {
-  IteratorWrapper* smallest = nullptr;
-  for (int i = 0; i < n_; i++) {
-    IteratorWrapper* child = &children_[i];
-    if (child->Valid()) {
-      if (smallest == nullptr) {
-        smallest = child;
-      } else if (comparator_->Compare(child->key(), smallest->key()) < 0) {
-        smallest = child;
-      }
-    }
-  }
-  current_ = smallest;
+  // TODO: Implement this method.
+  // Hint: You can use the key() method of the children.
+  // Hint: You can use the comparator_ to compare the keys.
+  // Hint: You can use the Valid() method of the children.
+  // Hint: You need to set the current_ to the smallest child.
 }
 
 void MergingIterator::FindLargest() {
-  IteratorWrapper* largest = nullptr;
-  for (int i = n_ - 1; i >= 0; i--) {
-    IteratorWrapper* child = &children_[i];
-    if (child->Valid()) {
-      if (largest == nullptr) {
-        largest = child;
-      } else if (comparator_->Compare(child->key(), largest->key()) > 0) {
-        largest = child;
-      }
-    }
-  }
-  current_ = largest;
+  // TODO: Implement this method.
+  // Hint: You can use the key() method of the children.
+  // Hint: You can use the comparator_ to compare the keys.
+  // Hint: You can use the Valid() method of the children.
+  // Hint: You need to set the current_ to the largest child.
 }
 }  // namespace
 
