@@ -78,8 +78,7 @@ class MergingIterator : public Iterator {
     if (direction_ != kForward) {
       for (int i = 0; i < n_; ++i) {
         IteratorWrapper iter = children_[i];
-        if (current_ != &iter && iter.Valid() &&
-            comparator_->Compare(iter.key(), current_->key()) != 0) {
+        if (current_ != &iter && iter.Valid()) {
           iter.Next();
         }
       }
@@ -102,8 +101,7 @@ class MergingIterator : public Iterator {
     if (direction_ != kReverse) {
       for (int i = 0; i < n_; ++i) {
         IteratorWrapper iter = children_[i];
-        if (current_ != &iter && iter.Valid() &&
-            comparator_->Compare(iter.key(), current_->key()) != 0) {
+        if (current_ != &iter && iter.Valid()) {
           iter.Prev();
         }
       }
