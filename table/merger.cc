@@ -6,6 +6,7 @@
 
 #include "leveldb/comparator.h"
 #include "leveldb/iterator.h"
+
 #include "table/iterator_wrapper.h"
 
 namespace leveldb {
@@ -29,21 +30,31 @@ class MergingIterator : public Iterator {
   bool Valid() const override { return (current_ != nullptr); }
 
   void SeekToFirst() override {
-    // TODO: Implement this method.
+    // Implement this method.
     // Hint: You can use the FindSmallest() method.
     // Hint: You can use the SeekToFirst() method of the children.
     // Hint: remember to set the direction to kForward.
+    for (int i = 0; i < n_; ++i) {
+      children_[i].SeekToFirst();
+    }
+    FindSmallest();
+    direction_ = kForward;
   }
 
   void SeekToLast() override {
-    // TODO: Implement this method.
+    // Implement this method.
     // Hint: You can use the FindLargest() method.
     // Hint: You can use the SeekToLast() method of the children.
     // Hint: remember to set the direction to kReverse.
+    for (int i = 0; i < n_; ++i) {
+      children_[i].SeekToLast();
+    }
+    FindLargest();
+    direction_ = kReverse;
   }
 
   void Seek(const Slice& target) override {
-    // TODO: Implement this method
+    // Implement this method
     // Hint: You can use the Seek() method of the children.
     // Hint: remember to set the direction to kForward.
     // Hint: remember to call FindSmallest() after seeking.
@@ -63,7 +74,19 @@ class MergingIterator : public Iterator {
     // the smallest child and key() == current_->key().  Otherwise,
     // we explicitly position the non-current_ children.
 
-    // TODO: Implement this method.
+    // Implement this method.
+    if (direction_ != kForward) {
+      for (int i = 0; i < n_; ++i) {
+        IteratorWrapper iter = children_[i];
+        if (current_ != &iter && iter.Valid() &&
+            comparator_->Compare(iter.key(), current_->key()) != 0) {
+          iter.Next();
+        }
+      }
+    }
+    current_->Next();
+    FindSmallest();
+    direction_ = kForward;
   }
 
   void Prev() override {
@@ -75,7 +98,10 @@ class MergingIterator : public Iterator {
     // the largest child and key() == current_->key().  Otherwise,
     // we explicitly position the non-current_ children.
 
-    // TODO: Implement this method.
+    // Implement this method.
+    current_->Prev();
+    FindLargest();
+    direction_ = kReverse;
   }
 
   Slice key() const override {
@@ -117,19 +143,41 @@ class MergingIterator : public Iterator {
 };
 
 void MergingIterator::FindSmallest() {
-  // TODO: Implement this method.
+  // Implement this method.
   // Hint: You can use the key() method of the children.
   // Hint: You can use the comparator_ to compare the keys.
   // Hint: You can use the Valid() method of the children.
   // Hint: You need to set the current_ to the smallest child.
+  Slice* smallest = nullptr;
+  for (int i = 0; i < n_; ++i) {
+    IteratorWrapper iter = children_[i];
+    if (iter.Valid()) {
+      Slice key = iter.key();
+      if (smallest == nullptr || comparator_->Compare(key, *smallest) < 0) {
+        smallest = &key;
+        current_ = &iter;
+      }
+    }
+  }
 }
 
 void MergingIterator::FindLargest() {
-  // TODO: Implement this method.
+  // Implement this method.
   // Hint: You can use the key() method of the children.
   // Hint: You can use the comparator_ to compare the keys.
   // Hint: You can use the Valid() method of the children.
   // Hint: You need to set the current_ to the largest child.
+  Slice* largest = nullptr;
+  for (int i = 0; i < n_; ++i) {
+    IteratorWrapper iter = children_[i];
+    if (iter.Valid()) {
+      Slice key = iter.key();
+      if (largest == nullptr || comparator_->Compare(key, *largest) > 0) {
+        largest = &key;
+        current_ = &iter;
+      }
+    }
+  }
 }
 }  // namespace
 
