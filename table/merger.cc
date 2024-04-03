@@ -99,6 +99,15 @@ class MergingIterator : public Iterator {
     // we explicitly position the non-current_ children.
 
     // Implement this method.
+    if (direction_ != kReverse) {
+      for (int i = 0; i < n_; ++i) {
+        IteratorWrapper iter = children_[i];
+        if (current_ != &iter && iter.Valid() &&
+            comparator_->Compare(iter.key(), current_->key()) != 0) {
+          iter.Prev();
+        }
+      }
+    }
     current_->Prev();
     FindLargest();
     direction_ = kReverse;
