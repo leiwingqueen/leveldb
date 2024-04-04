@@ -155,17 +155,17 @@ void MergingIterator::FindSmallest() {
   // Hint: You can use the comparator_ to compare the keys.
   // Hint: You can use the Valid() method of the children.
   // Hint: You need to set the current_ to the smallest child.
-  Slice* smallest = nullptr;
+  IteratorWrapper* smallest = nullptr;
   for (int i = 0; i < n_; ++i) {
-    IteratorWrapper iter = children_[i];
-    if (iter.Valid()) {
-      Slice key = iter.key();
-      if (smallest == nullptr || comparator_->Compare(key, *smallest) < 0) {
-        smallest = &key;
-        current_ = &iter;
+    IteratorWrapper* iter = &children_[i];
+    if (iter->Valid()) {
+      if (smallest == nullptr ||
+          comparator_->Compare(iter->key(), smallest->key()) < 0) {
+        smallest = iter;
       }
     }
   }
+  current_ = smallest;
 }
 
 void MergingIterator::FindLargest() {
@@ -174,17 +174,17 @@ void MergingIterator::FindLargest() {
   // Hint: You can use the comparator_ to compare the keys.
   // Hint: You can use the Valid() method of the children.
   // Hint: You need to set the current_ to the largest child.
-  Slice* largest = nullptr;
+  IteratorWrapper* largest = nullptr;
   for (int i = 0; i < n_; ++i) {
-    IteratorWrapper iter = children_[i];
-    if (iter.Valid()) {
-      Slice key = iter.key();
-      if (largest == nullptr || comparator_->Compare(key, *largest) > 0) {
-        largest = &key;
-        current_ = &iter;
+    IteratorWrapper* iter = &children_[i];
+    if (iter->Valid()) {
+      if (largest == nullptr ||
+          comparator_->Compare(iter->key(), largest->key()) > 0) {
+        largest = iter;
       }
     }
   }
+  current_ = largest;
 }
 }  // namespace
 
