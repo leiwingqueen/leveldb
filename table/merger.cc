@@ -78,7 +78,9 @@ class MergingIterator : public Iterator {
     if (direction_ != kForward) {
       for (int i = 0; i < n_; ++i) {
         IteratorWrapper* iter = &children_[i];
-        if (current_ != iter && iter->Valid()) {
+        iter->Seek(key());
+        if (current_ != iter && iter->Valid() &&
+            comparator_->Compare(iter->key(), key()) == 0) {
           iter->Next();
         }
       }
@@ -101,8 +103,14 @@ class MergingIterator : public Iterator {
     if (direction_ != kReverse) {
       for (int i = 0; i < n_; ++i) {
         IteratorWrapper* iter = &children_[i];
-        if (current_ != iter && iter->Valid()) {
-          iter->Prev();
+        // why we need to seek first?
+        iter->Seek(key());
+        if (current_ != iter) {
+          if (!iter->Valid()) {
+            iter->SeekToLast();
+          } else {
+            iter->Prev();
+          }
         }
       }
     }
