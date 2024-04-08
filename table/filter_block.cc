@@ -5,6 +5,7 @@
 #include "table/filter_block.h"
 
 #include "leveldb/filter_policy.h"
+
 #include "util/coding.h"
 
 namespace leveldb {
@@ -50,9 +51,28 @@ Slice FilterBlockBuilder::Finish() {
 
 void FilterBlockBuilder::GenerateFilter() {
   // TODO: implement
-  // hint: you need to save filter data to result_ and filter offsets to filter_offsets_
-  // hint: you can use policy_->CreateFilter() to generate filter data
-  // hint: you can use tmp_keys_ to store keys temporarily
+  // hint: you need to save filter data to result_ and filter offsets to
+  // filter_offsets_ hint: you can use policy_->CreateFilter() to generate
+  // filter data hint: you can use tmp_keys_ to store keys temporarily
+
+  size_t size = start_.size();
+  if (size == 0) {
+    // add result offset to the filter offsets
+    filter_offsets_.push_back(result_.size());
+    return;
+  }
+  start_.push_back(keys_.size());
+  tmp_keys_.resize(size);
+  for (int i = 0; i < size; ++i) {
+    const char* base = keys_.data() + start_[i];
+    size_t len = start_[i + 1] - start_[i];
+    tmp_keys_[i] = Slice(base, len);
+  }
+  policy_->CreateFilter(&tmp_keys_[0], size, &result_);
+  filter_offsets_.push_back(result_.size());
+  start_.clear();
+  tmp_keys_.clear();
+  keys_.clear();
 }
 
 FilterBlockReader::FilterBlockReader(const FilterPolicy* policy,
