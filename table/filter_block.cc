@@ -68,8 +68,8 @@ void FilterBlockBuilder::GenerateFilter() {
     size_t len = start_[i + 1] - start_[i];
     tmp_keys_[i] = Slice(base, len);
   }
-  policy_->CreateFilter(&tmp_keys_[0], size, &result_);
   filter_offsets_.push_back(result_.size());
+  policy_->CreateFilter(&tmp_keys_[0], size, &result_);
   start_.clear();
   tmp_keys_.clear();
   keys_.clear();
