@@ -50,7 +50,7 @@ Slice FilterBlockBuilder::Finish() {
 }
 
 void FilterBlockBuilder::GenerateFilter() {
-  // TODO: implement
+  // implement
   // hint: you need to save filter data to result_ and filter offsets to
   // filter_offsets_ hint: you can use policy_->CreateFilter() to generate
   // filter data hint: you can use tmp_keys_ to store keys temporarily
@@ -69,7 +69,7 @@ void FilterBlockBuilder::GenerateFilter() {
     tmp_keys_[i] = Slice(base, len);
   }
   filter_offsets_.push_back(result_.size());
-  policy_->CreateFilter(&tmp_keys_[0], size, &result_);
+  policy_->CreateFilter(&tmp_keys_[0], static_cast<int>(size), &result_);
   start_.clear();
   tmp_keys_.clear();
   keys_.clear();
