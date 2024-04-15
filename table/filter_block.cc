@@ -5,6 +5,7 @@
 #include "table/filter_block.h"
 
 #include "leveldb/filter_policy.h"
+
 #include "util/coding.h"
 
 namespace leveldb {
@@ -49,29 +50,29 @@ Slice FilterBlockBuilder::Finish() {
 }
 
 void FilterBlockBuilder::GenerateFilter() {
-  const size_t num_keys = start_.size();
-  if (num_keys == 0) {
-    // Fast path if there are no keys for this filter
+  // TODO: implement
+  // hint: you need to save filter data to result_ and filter offsets to
+  // filter_offsets_ hint: you can use policy_->CreateFilter() to generate
+  // filter data hint: you can use tmp_keys_ to store keys temporarily
+
+  size_t size = start_.size();
+  if (size == 0) {
+    // add result offset to the filter offsets
     filter_offsets_.push_back(result_.size());
     return;
   }
-
-  // Make list of keys from flattened key structure
-  start_.push_back(keys_.size());  // Simplify length computation
-  tmp_keys_.resize(num_keys);
-  for (size_t i = 0; i < num_keys; i++) {
+  start_.push_back(keys_.size());
+  tmp_keys_.resize(size);
+  for (int i = 0; i < size; ++i) {
     const char* base = keys_.data() + start_[i];
-    size_t length = start_[i + 1] - start_[i];
-    tmp_keys_[i] = Slice(base, length);
+    size_t len = start_[i + 1] - start_[i];
+    tmp_keys_[i] = Slice(base, len);
   }
-
-  // Generate filter for current set of keys and append to result_.
   filter_offsets_.push_back(result_.size());
-  policy_->CreateFilter(&tmp_keys_[0], static_cast<int>(num_keys), &result_);
-
+  policy_->CreateFilter(&tmp_keys_[0], size, &result_);
+  start_.clear();
   tmp_keys_.clear();
   keys_.clear();
-  start_.clear();
 }
 
 FilterBlockReader::FilterBlockReader(const FilterPolicy* policy,
