@@ -54,7 +54,6 @@ void FilterBlockBuilder::GenerateFilter() {
   // hint: you need to save filter data to result_ and filter offsets to
   // filter_offsets_ hint: you can use policy_->CreateFilter() to generate
   // filter data hint: you can use tmp_keys_ to store keys temporarily
-
   size_t size = start_.size();
   if (size == 0) {
     // add result offset to the filter offsets
