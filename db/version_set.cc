@@ -88,9 +88,25 @@ Version::~Version() {
 // Binary search to find earliest index whose largest key >= internal_key.
 int FindFile(const InternalKeyComparator& icmp,
              const std::vector<FileMetaData*>& files, const Slice& key) {
-  // TODO: implement find file
+  // implement find file
   // hint: use binary search
-  return 0;
+  if (files.empty()) {
+    return 0;
+  }
+  int l = 0;
+  int r = files.size() - 1;
+  if (icmp.Compare(files[r]->largest.Encode(), key) < 0) {
+    return files.size();
+  }
+  while (l < r) {
+    size_t mid = l + (r - l) / 2;
+    if (icmp.Compare(files[mid]->largest.Encode(), key) >= 0) {
+      r = mid;
+    } else {
+      l = mid + 1;
+    }
+  }
+  return l;
 }
 
 static bool AfterFile(const Comparator* ucmp, const Slice* user_key,
@@ -269,13 +285,44 @@ static bool NewestFirst(FileMetaData* a, FileMetaData* b) {
 
 void Version::ForEachOverlapping(Slice user_key, Slice internal_key, void* arg,
                                  bool (*func)(void*, int, FileMetaData*)) {
-  // TODO: implement for each overlapping
+  // implement for each overlapping
   // hint:
   // - use icmp_.user_comparator() to compare user keys
-  // - search level-0 files from newest to oldest. we can use NewestFirst to sort
+  // - search level-0 files from newest to oldest. we can use NewestFirst to
+  // sort
   // - search level-0 using smallest and largest keys to filter files
   // - search other levels using binary search
   // - we need to check that if the user_key in the file using the argument func
+
+  const Comparator* userComparator = vset_->icmp_.user_comparator();
+  // search level-0
+  std::vector<FileMetaData*> level0Files;
+  for (auto file : files_[0]) {
+    if (userComparator->Compare(user_key, file->smallest.user_key()) >= 0 &&
+        userComparator->Compare(user_key, file->largest.user_key()) <= 0) {
+      level0Files.push_back(file);
+    }
+  }
+  if (!level0Files.empty()) {
+    std::sort(level0Files.begin(), level0Files.end(), NewestFirst);
+    for (auto file : level0Files) {
+      if (!func(arg, 0, file)) {
+        return;
+      }
+    }
+  }
+  // search other level
+  for (int i = 1; i < config::kNumLevels; ++i) {
+    std::vector<FileMetaData*> tmp = files_[i];
+    if (!tmp.empty()) {
+      int idx = FindFile(vset_->icmp_, tmp, internal_key);
+      if (idx < tmp.size()) {
+        if (!func(arg, i, tmp[idx])) {
+          return;
+        }
+      }
+    }
+  }
 }
 
 Status Version::Get(const ReadOptions& options, const LookupKey& k,
